@@ -1,5 +1,3 @@
-// Uses openmpi to parallelize calculation of forces
-// N-body simulation using leapfrog scheme, brute force pair-wise matching O(n^2)
 
 #include <iostream>
 #include <mpi.h>
@@ -10,14 +8,14 @@ using namespace std;
 
 
 #define G 1.0
-#define ETA 0.1 // Ignore distances less than this
-#define SKIPFRAME 10 // Only output every nth step
+#define ETA 0.1 
+#define SKIPFRAME 10 
 
-#define NDIM 3 // Number of dimensions (currently hardcoded to 3)
+#define NDIM 3 
 
-//////
+
 void timestamp();
-//////
+
 
 void print_state(double pos[][NDIM], double vel[][NDIM], int n)
 {
@@ -65,10 +63,9 @@ void calculateForces(double forces[][NDIM], double pos[][NDIM], int n, int id, i
 	// Initialize forces to zero
 	zeroVec(forces, n);
 
-	// for (int i=0; i < n; i++) {
 	// Aggregate all forces for each body
-	// stride based on id
-	for (int i = id; i < n; i += p) { // split up n bodies into p processes
+	// step forward based on id
+	for (int i = id; i < n; i += p) { // split bodies into processes
 		for (int j = i + 1; j < n; j++) {
 			dx = pos[j][0] - pos[i][0];
 			dy = pos[j][1] - pos[i][1];
@@ -77,7 +74,7 @@ void calculateForces(double forces[][NDIM], double pos[][NDIM], int n, int id, i
 			r = sqrt(r2);
 			r3 = r * r2;
 
-			f = double(G * 1 * 1) / (r3 + ETA);  // extra divide by r in there needs to multiply
+			f = double(G * 1 * 1) / (r3 + ETA);
 			fx = dx * f;
 			fy = dy * f;
 			fz = dz * f;
@@ -115,10 +112,10 @@ void stepVec(double a[][NDIM], double b[][NDIM], int n, double dt)
 	}
 }
 
-// TODO : parallelize the stepVec calls!
+
 void evolve(double pos[][NDIM], double vel[][NDIM], double forces[][NDIM], int n,
 	double dt, int id, int p) {
-	// LEAPFROG (half step position, full step vel, half step pos)
+
 
 	// Half-step positions
 	// pos += vel * dt/2
@@ -126,19 +123,16 @@ void evolve(double pos[][NDIM], double vel[][NDIM], double forces[][NDIM], int n
 	{
 		stepVec(pos, vel, n, 0.5*dt);
 	}
-	// Broadcast updated position to all
 	MPI_Bcast(pos, n*NDIM, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
-	// Calculate forces applied to each body
-	calculateForces(forces, pos, n, id, p); // Note, Allreduce vs Reduce
+	calculateForces(forces, pos, n, id, p);
 
 	// Full-step velocity
 	// vel += forces * dt
-	if (id == 0) // currently forces is only updated in id 0, 
+	if (id == 0) // currently forces is only updated in id 0 
 	{
 		stepVec(vel, forces, n, dt);
 	}
-	// Broadcast updated position to all
 	MPI_Bcast(vel, n*NDIM, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
 	// Half-step positions
@@ -147,7 +141,7 @@ void evolve(double pos[][NDIM], double vel[][NDIM], double forces[][NDIM], int n
 	{
 		stepVec(pos, vel, n, 0.5*dt);
 	}
-	// Broadcast updated position to all
+
 	MPI_Bcast(pos, n*NDIM, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 }
 
@@ -160,7 +154,7 @@ void simulate(double pos[][NDIM], double vel[][NDIM], int n,
 		cerr << "Simulating " << n << " bodies for " << steps << " steps, using dt = " << dt << '\n';
 	}
 
-	// Set up forces array ( prep for openmpi )
+	// Set up forces array
 	double(*forces)[NDIM] = new double[n][NDIM];
 
 	clock_t tStart;
@@ -172,7 +166,6 @@ void simulate(double pos[][NDIM], double vel[][NDIM], int n,
 		t = clock();
 	}
 	for (int i = 1; i <= steps; i++) {
-		// For each step
 		evolve(pos, vel, forces, n, dt, id, p);
 
 		if (id == 0)
@@ -185,7 +178,7 @@ void simulate(double pos[][NDIM], double vel[][NDIM], int n,
 				cerr << "Step " << i << ", Time " << i * dt << '\n';
 				print_state(pos, vel, n);
 			}
-			if (double(clock() - t) / CLOCKS_PER_SEC > 5.0) { // Every 5 seconds
+			if (double(clock() - t) / CLOCKS_PER_SEC > 5.0) {
 				cerr << "On Step " << i << '/' << steps << " - Time Spent: " << double(clock() - tStart) / CLOCKS_PER_SEC;
 				cerr << "s, ";
 				t = clock();
@@ -200,16 +193,12 @@ void simulate(double pos[][NDIM], double vel[][NDIM], int n,
 int main(int argc, char *argv[])
 {
 
-	// MPI stuff
-	/////////////////////////////////////////////////////////////////
 	MPI_Init(&argc, &argv);
 	int p;
 	int id;
 	MPI_Comm_rank(MPI_COMM_WORLD, &id);
 	MPI_Comm_size(MPI_COMM_WORLD, &p);
 
-	// Initialize from passed in input arguments
-	/////////////////////////////////////////
 	if (argc < 3)
 	{
 		if (id == 0) {
@@ -224,10 +213,10 @@ int main(int argc, char *argv[])
 	bool verbose = false;
 	if (argc == 4) {
 		switch (atoi(argv[3])) {
-		case 1: // true         
+		case 1:        
 			verbose = true;
 			break;
-		case 0: // false
+		case 0: 
 			verbose = false;
 			break;
 		default:
@@ -244,22 +233,18 @@ int main(int argc, char *argv[])
 		cerr << "Steps to iterate: " << steps << ", dt: " << dt << '\n';
 	}
 
-	/////////////////////////////////////////
 
-	int n; // Number of bodies, passed in as first digit/line in input
+	int n; 
 
 	if (id == 0)
 	{
 		cerr << "Reading input...\n";
 		cin >> n;
 	}
-	// Broadcast n to all processes
-	/////////////////////////////////////////////////////////////////
 	MPI_Bcast(&n, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
 
 
-	// Arrays of variables on all n bodies
 	// double * mass[n]= new double[n];
 	double(*pos)[NDIM] = new double[n][NDIM];
 	double(*vel)[NDIM] = new double[n][NDIM];
@@ -267,7 +252,7 @@ int main(int argc, char *argv[])
 	if (id == 0)
 	{
 		cerr << "Generating " << n << " bodies...\n";
-		int i = 0; // iterator over n bodies while reading from file
+		int i = 0; 
 		float k;
 		while (cin >> k)
 		{
@@ -285,12 +270,9 @@ int main(int argc, char *argv[])
 		cerr << endl << "Done reading file." << endl;
 	}
 
-	// Broadcast body information to all processes (in future scatter this?)
-	/////////////////////////////////////////////////////////////////
 	MPI_Bcast(pos, n*NDIM, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 	MPI_Bcast(vel, n*NDIM, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
-	// 1 - PRE-SIMULATION
 	if (verbose && id == 0) print_state(pos, vel, n);
 
 	clock_t t1;
@@ -301,10 +283,8 @@ int main(int argc, char *argv[])
 		cerr << "Begin Simulation\n";
 	}
 
-	// 2 - RUN SIMULATION
 	simulate(pos, vel, n, steps, dt, verbose, id, p);
 
-	// 3 - POST-SIMULATION
 	if (id == 0)
 	{
 		cerr << "End Simulation\n";
@@ -314,7 +294,6 @@ int main(int argc, char *argv[])
 	}
 	if (verbose && id == 0) print_state(pos, vel, n);
 
-	// free memory used for bodies
 	// delete [] mass; 
 	delete[] pos;
 	delete[] vel;
@@ -330,7 +309,6 @@ void timestamp()
 
 	static char time_buffer[TIME_SIZE];
 	const struct std::tm *tm_ptr;
-	// size_t len;
 	std::time_t now;
 
 	now = std::time(NULL);

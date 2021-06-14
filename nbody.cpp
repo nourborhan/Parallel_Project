@@ -5,10 +5,10 @@
 using namespace std;
 
 #define G 1.0
-#define ETA 0.1 // Ignore distances less than this
-#define SKIPFRAME 1 // Only output every nth step
+#define ETA 0.1 
+#define SKIPFRAME 1 
 
-#define NDIM 3 // Number of dimensions (currently hardcoded to 3)
+#define NDIM 3 
 
 void print_state(double pos[][NDIM], double vel[][NDIM],int n)
 {
@@ -66,7 +66,7 @@ void calculateForces(double forces[][NDIM], double pos[][NDIM], int n)
       r = sqrt(r2);
       r3 = r*r2;
       
-      f = double(G*1*1)/(r3 + ETA);  // extra divide by r in there needs to multiply
+      f = double(G*1*1)/(r3 + ETA); 
       fx = dx * f;
       fy = dy * f;
       fz = dz * f;
@@ -92,13 +92,11 @@ void stepVec(double a[][NDIM], double b[][NDIM], int n, double dt)
 }
 
 void evolve(double pos[][NDIM], double vel[][NDIM], double forces[][NDIM], int n, double dt) {  
-  // LEAPFROG (half step position, full step vel, half step pos)
   
   // Half-step positions
   // pos += vel * dt/2
   stepVec(pos, vel, n, 0.5*dt);
 
-  // Calculate forces applied to each body
   calculateForces(forces, pos, n);
 
   // Full-step velocity
@@ -115,7 +113,7 @@ void simulate(double pos[][NDIM], double vel[][NDIM], int n, int steps,double dt
   cout << steps << " STEPS, " << dt << " DT\n";
   cerr << "Simulating " << n << " bodies for " << steps << " steps, using dt = " << dt << '\n';
 
-  // Set up forces array ( prep for openmpi )
+  // Set up forces array
   double (* forces)[NDIM] = new double[n][NDIM];
 
   clock_t tStart = clock();
@@ -131,7 +129,7 @@ void simulate(double pos[][NDIM], double vel[][NDIM], int n, int steps,double dt
       cerr << "Step " << i << ", Time " << i*dt << '\n';
       print_state(pos, vel, n);
     }
-    if (double(clock()-t)/CLOCKS_PER_SEC > 5.0) { // Every 5 seconds
+    if (double(clock()-t)/CLOCKS_PER_SEC > 5.0) {
       cerr << "On Step " << i << '/' << steps << " - Time Spent: " << double(clock()-tStart)/CLOCKS_PER_SEC;
       cerr << "s, ";
       t = clock();
@@ -143,7 +141,7 @@ void simulate(double pos[][NDIM], double vel[][NDIM], int n, int steps,double dt
 
 int main(int argc, char *argv[])
 {
-  int n; // Number of bodies, passed in as first digit in input
+  int n;
   bool verbose = false;
 
   if (argc < 3)
@@ -156,10 +154,10 @@ int main(int argc, char *argv[])
 
   if (argc == 4) { 
     switch (atoi(argv[3])) {
-      case 1: // true         
+      case 1:        
         verbose = true; 
         break;
-      case 0: // false
+      case 0:
         verbose = false;
         break;
       default:
@@ -175,12 +173,11 @@ int main(int argc, char *argv[])
   cin >> n;
   cerr << "Generating " << n << " bodies...\n";
 
-  // Arrays of variables on all n bodies
   // double * mass[n]= new double[n];
   double (* pos)[NDIM]= new double[n][NDIM];
   double (* vel)[NDIM]= new double[n][NDIM];
   
-  int i = 0; // iterator over n bodies while reading from file
+  int i = 0;
   float k;
   while (cin >> k)
   {
@@ -206,7 +203,6 @@ int main(int argc, char *argv[])
   cerr << "Simulation completed in " << double(t2-t1)/CLOCKS_PER_SEC << " seconds.\n";
   if (verbose) print_state(pos, vel, n);
 
-  // free memory used for bodies
   // delete [] mass; 
   delete [] pos; 
   delete [] vel; 
