@@ -187,7 +187,7 @@ void simulate(double pos[][NDIM], double vel[][NDIM], int n,
 			}
 			if (double(clock() - t) / CLOCKS_PER_SEC > 5.0) { // Every 5 seconds
 				cerr << "On Step " << i << '/' << steps << " - Time Spent: " << double(clock() - tStart) / CLOCKS_PER_SEC;
-				cerr << "s, Time left: ~" << int((double(clock() - tStart) / CLOCKS_PER_SEC) / (double(i) / steps) - (double(clock() - tStart) / CLOCKS_PER_SEC)) << "s \n";
+				cerr << "s, ";
 				t = clock();
 				timestamp();
 			}
@@ -197,7 +197,7 @@ void simulate(double pos[][NDIM], double vel[][NDIM], int n,
 	delete[] forces;
 }
 
-int main2(int argc, char *argv[])
+int main(int argc, char *argv[])
 {
 
 	// MPI stuff
@@ -298,7 +298,7 @@ int main2(int argc, char *argv[])
 	{
 		t1 = clock();
 		timestamp();
-		cerr << "SIMULATION BEGIN\n";
+		cerr << "Begin Simulation\n";
 	}
 
 	// 2 - RUN SIMULATION
@@ -307,7 +307,7 @@ int main2(int argc, char *argv[])
 	// 3 - POST-SIMULATION
 	if (id == 0)
 	{
-		cerr << "SIMULATION END\n";
+		cerr << "End Simulation\n";
 		clock_t t2 = clock();
 		cerr << "Simulation completed in " << double(t2 - t1) / CLOCKS_PER_SEC << " seconds.\n";
 		timestamp();
@@ -334,7 +334,7 @@ void timestamp()
 	std::time_t now;
 
 	now = std::time(NULL);
-	#pragma warning(suppress : 4996)
+#pragma warning(suppress : 4996)
 	tm_ptr = std::localtime(&now);
 
 	std::strftime(time_buffer, TIME_SIZE, "%d %B %Y %I:%M:%S %p", tm_ptr);

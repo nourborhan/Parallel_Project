@@ -133,7 +133,7 @@ void simulate(double pos[][NDIM], double vel[][NDIM], int n, int steps,double dt
     }
     if (double(clock()-t)/CLOCKS_PER_SEC > 5.0) { // Every 5 seconds
       cerr << "On Step " << i << '/' << steps << " - Time Spent: " << double(clock()-tStart)/CLOCKS_PER_SEC;
-      cerr << "s, Time left: ~" << int( (double(clock()-tStart)/CLOCKS_PER_SEC)/(double(i)/steps) - (double(clock()-tStart)/CLOCKS_PER_SEC) ) << "s \n";
+      cerr << "s, ";
       t = clock();
     }
   }
@@ -199,9 +199,9 @@ int main(int argc, char *argv[])
   
   if (verbose) print_state(pos, vel, n);
   clock_t t1 = clock();
-  cerr << "SIMULATION BEGIN\n";
+  cerr << "Begin Simulation\n";
   simulate(pos, vel, n, steps, dt, verbose);
-  cerr << "SIMULATION END\n";
+  cerr << "End Simulation\n";
   clock_t t2 = clock();
   cerr << "Simulation completed in " << double(t2-t1)/CLOCKS_PER_SEC << " seconds.\n";
   if (verbose) print_state(pos, vel, n);
