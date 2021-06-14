@@ -1,0 +1,1 @@
+NbodyProject.exe 1000 0.01 <inputfile.in> outputfile.out
